@@ -1,0 +1,58 @@
+---
+#---------------------------[application, infrastructure] required fields---------------------------------------
+
+name: #..................... display name, can be overriden by parent
+clone: #.................... url to git clone
+type: #..................... member of [infrastructure, application]
+
+#----------------------------------------------------------------------------------------------------------------
+
+#----------------------------[infrastructure] optional fields----------------------------------------------------
+
+produce: #.................. cfn outputs that can be run as parameters in other cdk projects
+  name: type #..............
+
+# port: int                  -- Examples --
+# db_name: string
+
+#  endpoint:                 fields can be nested, the consumer only has to specify the top level
+#    dns_name: string
+#    port: int
+
+hook: #..................... defines git webhooks to be called pre or post deployment (payload is not supported)
+  pre: #....................
+    - workflow_id #.........
+  post: #...................
+    - workflow_id #.........
+
+consume: #.................. defines the dependent cdk projects and any cfn outputs to run as parameters
+  infrastructure: #......... corresponds to `type` required field
+    name: target_name #..... corresponds to `name` required field (if name is present clone is required)
+    clone: target_url #..... corresponds to `clone` required field (if name is present clone is required)
+    values: "*" #........... cfn outputs to run as parameters. "*" runs all produceed parameters
+
+#   values:                  individual values can be specified like this
+#     - cfn_output_name      values must correspond to the `produce` section of the consumed app
+#     - cfn_output_name
+
+#--------------------------------------------------------------------------------------------------------------
+
+#-----------------------------[application] optional fields----------------------------------------------------
+
+hook: #...................... application hooks to be run after all dependent deployments
+    - workflow_id #..........
+
+utilize: #................... defines the dependent cdk and application projects
+  infrastructure: #.......... corresponds to `type` required field
+    - name: target_name #.... corresponds to `name` required field (if name is present clone is required)
+      clone: target_repo #... corresponds to `clone` required field (if name is present clone is required)
+      reveal: #.............. the cloud formation values to surface to the registry, will be available to users
+        - cfn_output_name #.. corresponds to the output of project consumed
+        - cfn_output_name #..
+  application: #............. you can follow the same format as `utilize.infrastructure` for upstream apps
+
+reveal: #.................... specify values not related to the dependent projects to add to the registry
+  route: #................... structs created with nested formatting are reflected in the registry
+    - path: foo_rest/path #.. custom value
+    - path: bar_rest/path #..
+#---------------------------------------------------------------------------------------------------------------
